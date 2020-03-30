@@ -1,0 +1,189 @@
+yum -y install --setopt=obsoletes=0 docker-ce-18.06.3.ce-3.el7
+
+安装container-selinux 2.9
+[root@localhost docker]# wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+[root@localhost docker]# yum install epel-release
+[root@localhost docker]# yum install container-selinux 
+
+[root@localhost docker]# systemctl enable docker    // 设置开机启动
+[root@localhost docker]# systemctl start docker        // 启动docker
+[root@localhost docker]# systemctl status docker 
+
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+
+#!/bin/bash
+img_list='k8s.gcr.io/kube-apiserver:v1.17.3
+k8s.gcr.io/kube-controller-manager:v1.17.3
+k8s.gcr.io/kube-scheduler:v1.17.3
+k8s.gcr.io/kube-proxy:v1.17.3
+k8s.gcr.io/pause:3.1
+k8s.gcr.io/etcd:3.4.3-0
+k8s.gcr.io/coredns:1.6.5'
+
+for img in ${img_list}
+do
+        docker pull $img
+done
+
+
+docker pull gcr.azk8s.cn/google_containers/kube-apiserver-amd64:v1.17.3
+docker pull gcr.azk8s.cn/google_containers/kube-controller-manager:v1.17.3
+docker pull gcr.azk8s.cn/google_containers/kube-scheduler:v1.17.3
+docker pull gcr.azk8s.cn/google_containers/kube-proxy:v1.17.3
+docker pull gcr.azk8s.cn/google_containers/pause:3.1
+docker pull gcr.azk8s.cn/google_containers/etcd:3.4.3-0
+docker pull gcr.azk8s.cn/google_containers/coredns:1.6.5
+
+docker tag gcr.azk8s.cn/google_containers/kube-apiserver-amd64:v1.17.3 k8s.gcr.io/kube-apiserver:v1.17.3
+docker tag gcr.azk8s.cn/google_containers/kube-controller-manager:v1.17.3 k8s.gcr.io/kube-controller-manager:v1.17.3
+docker tag gcr.azk8s.cn/google_containers/kube-scheduler:v1.17.3 k8s.gcr.io/kube-scheduler:v1.17.3
+docker tag gcr.azk8s.cn/google_containers/kube-proxy:v1.17.3 k8s.gcr.io/kube-proxy:v1.17.3
+docker tag gcr.azk8s.cn/google_containers/pause:3.1 k8s.gcr.io/pause:3.1
+docker tag gcr.azk8s.cn/google_containers/etcd:3.4.3-0 k8s.gcr.io/etcd:3.4.3-0
+docker tag gcr.azk8s.cn/google_containers/coredns:1.6.5 k8s.gcr.io/coredns:1.6.5
+
+kubeadm init --kubernetes-version=v1.17.3 --pod-network-cidr=172.17.0.0/16 --apiserver-advertise-address=192.168.116.100
+
+vim /etc/systemd/system/kubelet.service.d/10-kubeadm.conf 增加下面的话
+Environment="KUBELET_SYSTEM_PODS_ARGS=--pod-manifest-path=/etc/kubernetes/manifests --allow-privileged=true --fail-swap-on=false"
+
+
+
+
+
+
+You have new mail in /var/spool/mail/root
+[root@master1 ~]# kubeadm init --kubernetes-version=v1.17.3 --pod-network-cidr=172.17.0.0/16 --apiserver-advertise-address=192.168.116.100
+W0307 11:10:58.980099    2996 validation.go:28] Cannot validate kube-proxy config - no validator is available
+W0307 11:10:58.980144    2996 validation.go:28] Cannot validate kubelet config - no validator is available
+[init] Using Kubernetes version: v1.17.3
+[preflight] Running pre-flight checks
+[preflight] Pulling images required for setting up a Kubernetes cluster
+[preflight] This might take a minute or two, depending on the speed of your internet connection
+[preflight] You can also perform this action in beforehand using 'kubeadm config images pull'
+[kubelet-start] Writing kubelet environment file with flags to file "/var/lib/kubelet/kubeadm-flags.env"
+[kubelet-start] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
+[kubelet-start] Starting the kubelet
+[certs] Using certificateDir folder "/etc/kubernetes/pki"
+[certs] Generating "ca" certificate and key
+[certs] Generating "apiserver" certificate and key
+[certs] apiserver serving cert is signed for DNS names [master1 kubernetes kubernetes.default kubernetes.default.svc kubernetes.default.svc.cluster.local] and IPs [10.96.0.1 192.168.116.100]
+[certs] Generating "apiserver-kubelet-client" certificate and key
+[certs] Generating "front-proxy-ca" certificate and key
+[certs] Generating "front-proxy-client" certificate and key
+[certs] Generating "etcd/ca" certificate and key
+[certs] Generating "etcd/server" certificate and key
+[certs] etcd/server serving cert is signed for DNS names [master1 localhost] and IPs [192.168.116.100 127.0.0.1 ::1]
+[certs] Generating "etcd/peer" certificate and key
+[certs] etcd/peer serving cert is signed for DNS names [master1 localhost] and IPs [192.168.116.100 127.0.0.1 ::1]
+[certs] Generating "etcd/healthcheck-client" certificate and key
+[certs] Generating "apiserver-etcd-client" certificate and key
+[certs] Generating "sa" key and public key
+[kubeconfig] Using kubeconfig folder "/etc/kubernetes"
+[kubeconfig] Writing "admin.conf" kubeconfig file
+[kubeconfig] Writing "kubelet.conf" kubeconfig file
+[kubeconfig] Writing "controller-manager.conf" kubeconfig file
+[kubeconfig] Writing "scheduler.conf" kubeconfig file
+[control-plane] Using manifest folder "/etc/kubernetes/manifests"
+[control-plane] Creating static Pod manifest for "kube-apiserver"
+[control-plane] Creating static Pod manifest for "kube-controller-manager"
+W0307 11:11:02.449876    2996 manifests.go:214] the default kube-apiserver authorization-mode is "Node,RBAC"; using "Node,RBAC"
+[control-plane] Creating static Pod manifest for "kube-scheduler"
+W0307 11:11:02.450598    2996 manifests.go:214] the default kube-apiserver authorization-mode is "Node,RBAC"; using "Node,RBAC"
+[etcd] Creating static Pod manifest for local etcd in "/etc/kubernetes/manifests"
+[wait-control-plane] Waiting for the kubelet to boot up the control plane as static Pods from directory "/etc/kubernetes/manifests". This can take up to 4m0s
+[apiclient] All control plane components are healthy after 15.506032 seconds
+[upload-config] Storing the configuration used in ConfigMap "kubeadm-config" in the "kube-system" Namespace
+[kubelet] Creating a ConfigMap "kubelet-config-1.17" in namespace kube-system with the configuration for the kubelets in the cluster
+[upload-certs] Skipping phase. Please see --upload-certs
+[mark-control-plane] Marking the node master1 as control-plane by adding the label "node-role.kubernetes.io/master=''"
+[mark-control-plane] Marking the node master1 as control-plane by adding the taints [node-role.kubernetes.io/master:NoSchedule]
+[bootstrap-token] Using token: vhdzf1.wme1qhzmkp5836rj
+[bootstrap-token] Configuring bootstrap tokens, cluster-info ConfigMap, RBAC Roles
+[bootstrap-token] configured RBAC rules to allow Node Bootstrap tokens to post CSRs in order for nodes to get long term certificate credentials
+[bootstrap-token] configured RBAC rules to allow the csrapprover controller automatically approve CSRs from a Node Bootstrap Token
+[bootstrap-token] configured RBAC rules to allow certificate rotation for all node client certificates in the cluster
+[bootstrap-token] Creating the "cluster-info" ConfigMap in the "kube-public" namespace
+[kubelet-finalize] Updating "/etc/kubernetes/kubelet.conf" to point to a rotatable kubelet client certificate and key
+[addons] Applied essential addon: CoreDNS
+[addons] Applied essential addon: kube-proxy
+
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+Then you can join any number of worker nodes by running the following on each as root:
+kubeadm token create --ttl 0 --print-join-command
+kubeadm join 192.168.116.100:6443 --token vhdzf1.wme1qhzmkp5836rj --discovery-token-ca-cert-hash sha256:ce27ee0a280b3873f80b4dda5ad4cbcfc70107f2b7f37053a52a0e44d6fd5317
+kubeadm join 192.168.116.100:6443 --token cwirmx.h927wfcw4bcg0zyg     --discovery-token-ca-cert-hash sha256:ce27ee0a280b3873f80b4dda5ad4cbcfc70107f2b7f37053a52a0e44d6fd5317  --ignore-preflight-errors=Swap
+
+tail /var/log/messages
+kubeadm reset
+vim /lib/systemd/system/kubelet.service
+kubectl get nodes
+
+
+创建应用
+kubectl run nginx-deploy --image=nginx:1.14-alpine --port=80 --replicas=1
+kubectl get deployment
+
+kubectl get pod -o wide
+
+kubectl expose deployment nginx-deploy --name nginx --port=80 --target-port=80 --protocol=TCP  #--name：test
+kubectl get test -n kube-system
+
+可以使用describe命令查看这个失败的Pod的明细：
+$ kubectl describe pod fail-1034443984-jerry
+
+sudo mkdir -p /etc/docker
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+    "registry-mirrors": [
+        "https://1nj0zren.mirror.aliyuncs.com",
+        "https://docker.mirrors.ustc.edu.cn",
+        "http://f1361db2.m.daocloud.io",
+        "https://registry.docker-cn.com"
+    ]
+}
+EOF
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
+docker --registry-mirror=http://f1361db2.m.daocloud.io daemon
+
+docker pull 1nj0zren.mirror.aliyuncs.com/library/nginx:latest1nj0zren.mirror.aliyest
+
+kubectl run nginx-app --image=1nj0zren.mirror.aliyuncs.com/library/nginx:latest --image-pull-policy=IfNotPresent --replicas=2
+
+kubectl expose deployment.apps nginx-app --type=ClusterIP --target-port=80 --port=80
+
+kubectl get service
+
+kubectl exec -it nginx-app-dc598ff4c-9fr2v sh
+cd /usr/share/nginx/html
+echo "nginx app2 pod1" > index.html
+
+
+kubectl exec -it nginx-app-dc598ff4c-kf7rs sh
+echo "nginx app2 pod2" > index.html
+
+kubectl expose deployment nginx-app  --name=nginx1   --port=80 --target-port=80 --type=NodePort
+kubectl get svc -o wide
+
+kubectl scale --replicas=5 deployment nginx-app
+
+kubectl scale --replicas=3 deployment nginx-deploy
